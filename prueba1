@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama Mecánico de Pozo</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .label {
+            fill: black;
+            font-size: 12px;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <h1>Diagrama Mecánico de Pozo</h1>
+    <svg id="mechanicalDiagram" width="400" height="800"></svg>
+
+    <script>
+        // Datos del diagrama
+        const data = [
+            { type: "Casing", top: 0, bottom: 100 },
+            { type: "Tubing", top: 100, bottom: 200 },
+            { type: "Liner", top: 200, bottom: 300 },
+        ];
+
+        const elements = [
+            { type: "Cañoneo", depth: 150 },
+            { type: "Zapata", depth: 280 }
+        ];
+
+        // Dimensiones del SVG
+        const svgWidth = 400;
+        const svgHeight = 800;
+        const margin = { top: 50, right: 50, bottom: 50, left: 100 };
+
+        // Crear SVG
+        const svg = d3.select("#mechanicalDiagram")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight);
+
+        // Escalas
+        const scaleY = d3.scaleLinear()
+            .domain([0, 300]) // Profundidad del pozo (ajustar según datos)
+            .range([margin.top, svgHeight - margin.bottom]);
+
+        const colors = {
+            "Casing": "url(#gradientCasing)",
+            "Tubing": "url(#gradientTubing)",
+            "Liner": "url(#gradientLiner)",
+        };
+
+        // Definir gradientes metálicos
+        const defs = svg.append("defs");
+
+        const addGradient = (id, colorStart, colorEnd) => {
+            const gradient = defs.append("linearGradient")
+                .attr("id", id)
+                .attr("x1", "0%").attr("x2", "0%")
+                .attr("y1", "0%").attr("y2", "100%");
+            gradient.append("stop").attr("offset", "0%").attr("stop-color", colorStart);
+            gradient.append("stop").attr("offset", "100%").attr("stop-color", colorEnd);
+        };
+
+        addGradient("gradientCasing", "#b0b0b0", "#e0e0e0");
+        addGradient("gradientTubing", "#808080", "#c0c0c0");
+        addGradient("gradientLiner", "#a0a0a0", "#d0d0d0");
+
+        // Dibujar tuberías
+        svg.selectAll(".pipe")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("class", "pipe")
+            .attr("x", svgWidth / 4)
+            .attr("y", d => scaleY(d.top))
+            .attr("width", svgWidth / 2)
+            .attr("height", d => scaleY(d.bottom) - scaleY(d.top))
+            .attr("fill", d => colors[d.type]);
+
+        // Etiquetas de tuberías
+        svg.selectAll(".label")
+            .data(data)
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("x", svgWidth / 2)
+            .attr("y", d => scaleY(d.top) + (scaleY(d.bottom) - scaleY(d.top)) / 2)
+            .text(d => d.type);
+
+        // Dibujar elementos (cañoneos, zapatas, etc.)
+        svg.selectAll(".element")
+            .data(elements)
+            .enter()
+            .append("circle")
+            .attr("class", "element")
+            .attr("cx", svgWidth / 2)
+            .attr("cy", d => scaleY(d.depth))
+            .attr("r", 10)
+            .attr("fill", d => d.type === "Cañoneo" ? "red" : "blue");
+
+        // Etiquetas de elementos
+        svg.selectAll(".element-label")
+            .data(elements)
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("x", svgWidth / 2)
+            .attr("y", d => scaleY(d.depth) - 15)
+            .text(d => d.type);
+
+        // Ejes y leyenda
+        const axis = d3.axisLeft(scaleY).ticks(10).tickSize(-svgWidth / 2);
+        svg.append("g")
+            .attr("transform", `translate(${margin.left}, 0)`)
+            .call(axis)
+            .select(".domain")
+            .remove();
+    </script>
+</body>
+</html>
